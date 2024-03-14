@@ -48,7 +48,7 @@ Node* CreateFIFO(Node* next) {
 }
 
 // Вывод FIFO
-void print(Node* node)
+void printFIFO(Node* node)
 {
     while (node != nullptr) {
         std::cout << "Год: " << node->year << std::endl;
@@ -58,8 +58,19 @@ void print(Node* node)
     }
 }
 
+void printLIFO(Node* node)
+{
+    if (node != nullptr)
+    {
+        printLIFO(node->next);
+        std::cout << "Год: " << node->year << std::endl;
+        std::cout << "Художник: " << node->artist << std::endl;
+        std::cout << "Название: " << node->picture << std::endl;
+    }
+}
+
 //Добавление элементов
-void insertNode(Node* node) 
+void insertNode(Node* node)
 {
     while (node->next != nullptr)
     {
@@ -176,34 +187,172 @@ void Change(std::string picture, Node* head)
     std::cin >> current->picture;
 }
 
+//Сортировка по названию LIFO
+void SortLIFO(Node*& head) {
+    if (head == nullptr || head->next == nullptr) {
+        // Базовый случай: если список пуст или содержит только один элемент, нет необходимости сортировать
+        return;
+    }
+
+    Node* maxNode = head; // Находим узел с максимальным значением picture
+    Node* prev = nullptr;
+    Node* current = head;
+
+    while (current->next != nullptr) {
+        if (current->next->picture > maxNode->picture) {
+            maxNode = current->next;
+            prev = current;
+        }
+        current = current->next;
+    }
+
+    if (maxNode != head) {
+        // Перемещаем узел с максимальным значением picture в начало списка
+        prev->next = maxNode->next;
+        maxNode->next = head;
+        head = maxNode;
+    }
+
+    // Рекурсивно сортируем оставшуюся часть списка
+    SortLIFO(head->next);
+}
+
+//Сортировка по году FIFO
+void SortFIFO(Node*& head) {
+    if (head == nullptr || head->next == nullptr) {
+        // Если список пуст или содержит только один элемент, сортировка не требуется
+        return;
+    }
+
+    Node* current = head;
+    Node* nextNode = nullptr;
+    Node* temp = nullptr;
+    bool swapped;
+
+    do {
+        swapped = false;
+        current = head;
+        while (current->next != nextNode) {
+            if (current->year > current->next->year) {
+                // Меняем местами узлы, не меняя ссылок
+                temp = current->next;
+                current->next = temp->next;
+                temp->next = current;
+                if (current == head) {
+                    head = temp;
+                }
+                swapped = true;
+            }
+            current = current->next;
+        }
+        nextNode = current;
+    } while (swapped);
+}
+
+//Бинарное дерево
+// структура дерева
+struct Root
+{
+    Root* left;
+    Root* right;
+    Node* elem;
+
+    Root(Node* Elem)
+    {
+        left = nullptr;
+        right = nullptr;
+        elem = Elem;
+    }
+};
+
+//Добавление элемента в бинарное дерево
+Root* InsertBinaryTree(Node* node, Root* current)
+{
+    if (current == nullptr)
+    {
+        Root* newRoot = new Root(node);
+        return newRoot;
+    }
+
+    if (node->year < current->elem->year)
+    {
+        current->left = InsertBinaryTree(node, current->left);
+    }
+    else if (node->year > current->elem->year)
+    {
+        current->right = InsertBinaryTree(node, current->right);
+    }
+
+    return current;
+}
+
+//Создание бинарного дерева
+Root* CreateBinaryTree(Node* head)
+{
+    Root* root = nullptr;
+    Root* prevRoot = nullptr;
+
+    while (head != nullptr)
+    {
+        root = InsertBinaryTree(head, root);
+        head = head->next;
+    }
+
+    return root;
+}
+
+//Бинарный поиск
+void BinarySearch(int year, Root* root)
+{
+    if (root == nullptr || root->elem == nullptr)
+    {
+        std::cout << "Такого элемента нет";
+        return;
+    }
+    if (year == root->elem->year)
+    {
+        std::cout << year << std::endl;
+        std::cout << root->elem->artist << std::endl;
+        std::cout << root->elem->picture << std::endl;
+        return;
+    }
+    if (year < root->elem->year)
+    {
+        return BinarySearch(year, root->left);
+    }
+    else
+    {
+        return BinarySearch(year, root->right);
+    }
+
+}
+
 int main() {
     setlocale(LC_ALL, "Russian");
     int year;
     std::string picture;
-
     Node* head = CreateFIFO(nullptr);
-    print(head);
+    printFIFO(head);
+    SortLIFO(head);
+    printFIFO(head);
+    Root* root = CreateBinaryTree(head);
+    BinarySearch(5, root);
+    SortFIFO(head);
+    printFIFO(head);
     insertNode(head);
-    print(head);
+    printFIFO(head);
     std::cin >> year;
-    head = Delete(year, head);
-    print(head);
+    Delete(year, head);
+    printFIFO(head);
     std::cin >> picture;
     Delete(picture, head);
-    print(head);
+    printFIFO(head);
     std::cin >> year;
     Change(year, head);
-    print(head);
+    printFIFO(head);
     std::cin >> picture;
     Change(picture, head);
-    print(head);
-
-    // Освобождение памяти
-    while (head != nullptr) {
-        Node* temp = head;
-        head = head->next;
-        delete temp;
-    }
+    printFIFO(head);
 
     return 0;
 }
